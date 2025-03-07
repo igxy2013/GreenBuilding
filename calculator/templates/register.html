@@ -10,7 +10,10 @@
 <style>
 :where([class^="ri-"])::before { content: "\f3c2"; }
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button {-webkit-appearance: none;}
-input[type="number"] {-moz-appearance: textfield;}
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
 .logo-text {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-weight: 600;
