@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>登录</title>
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" as="style">
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
 <style>
 :where([class^="ri-"])::before { content: "\f3c2"; }
@@ -40,8 +38,25 @@ border: solid white;
 border-width: 0 2px 2px 0;
 transform: rotate(45deg);
 }
+.logo-text {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+}
 </style>
-<script>tailwind.config={theme:{extend:{colors:{primary:'#3176FF',secondary:'#6B7280'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<script>
+// 预加载其他页面
+window.addEventListener('load', () => {
+    const links = ['/register', '/reset_password', '/calculator'];
+    links.forEach(link => {
+        const prefetchLink = document.createElement('link');
+        prefetchLink.rel = 'prefetch';
+        prefetchLink.href = link;
+        document.head.appendChild(prefetchLink);
+    });
+});
+
+tailwind.config={theme:{extend:{colors:{primary:'#3176FF',secondary:'#6B7280'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}
+</script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
 <div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
@@ -160,7 +175,7 @@ try {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            email: username,  // 确保发送的字段名是 email
+            email: username,
             password: password
         })
     });
@@ -169,8 +184,10 @@ try {
     
     if (response.ok) {
         showToast('登录成功！');
+        document.getElementById('toast').classList.replace('text-red-500', 'text-green-500');
+        document.getElementById('toast').classList.replace('bg-red-100', 'bg-green-100');
         setTimeout(() => {
-            window.location.href = '/calculator';  // 修改为跳转到calculator页面
+            window.location.href = data.redirect || '/calculator';
         }, 1000);
     } else {
         showToast(data.error || '登录失败，请检查用户名和密码');
@@ -182,6 +199,20 @@ try {
     loadingIcon.classList.add('hidden');
     loginBtn.disabled = false;
 }
+});
+
+// 优化页面跳转
+document.querySelectorAll('a[href]').forEach(link => {
+    link.addEventListener('click', (e) => {
+        if (link.getAttribute('href').startsWith('/')) {
+            e.preventDefault();
+            document.body.style.opacity = '0.5';
+            document.body.style.transition = 'opacity 0.2s';
+            setTimeout(() => {
+                window.location.href = link.getAttribute('href');
+            }, 100);
+        }
+    });
 });
 </script>
 </body>
