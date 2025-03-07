@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>绿色建材比例计算</title>
+    <!-- 修改资源引用为绝对路径 -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body { font-family: '微软雅黑', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 20px auto; padding: 20px; background-color: #f4f7f6; font-size: large;}
+        h2 { color: #4CAF50; text-align: center; font-size: 36px;margin-bottom: 50px; }
+        .project-info {
+            margin-bottom: 30px;
+        }
+        .project-row {
+            margin-bottom: 20px;
+        }
+        .project-info label {
+            font-weight: 600;
+            font-size: 18px;
+            color: #34495e;
+        }
+        .project-info input,
+        .project-info select {
+            width: 400px;
+            height: 30px;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+            font-size: 18px;
+        }
+        .project-info input:focus,
+        .project-info select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .sub-item { display: flex; align-items: center; margin: 5px 10px; }
+        .note-italic { font-style: italic; color: #555; margin: 5px 10px;margin-top: 10px;margin-bottom: 10px;}
+        input[type="checkbox"] { 
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            appearance: none;
+            border: 1px solid #7b7e80;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+        }
+        input[type="checkbox"]:checked {
+            background-color: #3498db;
+            border: 1px solid #3498db;;
+        }
+        input[type="checkbox"]:checked:after {
+            content: '✓'; 
+            position: absolute; 
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+        }
+        input[type="number"], input[type="text"] { width: 100px; margin: 0 10px; padding: 5px; border: 1px solid #bdc3c7; border-radius: 4px; transition: border-color 0.3s; font-size: large;}
+        input[type="text"] { width: 300px;font-size: 18px; }
+        input[type="text"]:focus, input[type="number"]:focus { border-color: #3498db; outline: none;}
+
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; transition: background-color 0.3s; margin: 10px 5px; }
+        button:hover { background: #45a049; }
+        .score-summary { margin-top: 20px; }
+        #result { margin-top: 20px; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .category {
+            margin-bottom: 30px;
+            border: 1px solid #ecf0f1;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .category:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .category h3 {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            margin: 0;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            cursor: pointer;
+        }
+        .category h3 .toggle {
+            float: right;
+            font-weight: bold;
+        }
+
+    </style>
+        
+</head>
+<body>
+    <h2>绿色建材应用比例计算</h2>
+    <div class="project-info">
+        <div class="project-row">
+            <label for="projectName">项目名称：</label>
+            <input type="text" id="projectName" placeholder="输入项目名称" style="width: 500px;">
+            <label for="buildingNo" style="margin-left:10px;">子项名称：</label>
+            <input type="text" id="buildingNo" placeholder="子项名称" style="width: 200px;">
+        </div>
+        <div class="project-row">
+            <label for="projectLocation" style="margin-top:10px;">工程地点：</label>
+            <input type="text" id="projectLocation" placeholder="工程地点" style="width: 300px;" >
+            <label for="designNo" style="margin-left:10px;">设计编号：</label>
+            <input type="text" id="designNo" placeholder="设计编号" style="width: 100px;">
+            <label for="standardSelection">评价依据：</label>
+            <select id="standardSelection" style="width: 200px; height: 100%;">
+                <option value="municipal">成都市标</option>
+                <option value="provincial">四川省标</option>
+                <option value="national">通用国标</option>
+            </select>
+        </div>
+        <div class="project-row">
+            <label for="constructionUnit" style="margin-top:10px;">建设单位：</label>
+            <input type="text" id="constructionUnit" placeholder="建设单位" style="width: 500px;" >
+        </div>
+        <div class="project-row">
+            <label for="designUnit" style="margin-top:10px;">设计单位：</label>
+            <input type="text" id="designUnit" placeholder="设计单位" style="width: 500px;">
+        </div>
+    </div>
+    <!-- 二级指标容器（根据细则附录A结构） -->
+    <div id="indicators">
+        <!-- 每个一级指标区块 -->
+        <div class="category" data-category="Q1">
+            <h3>主体及围护结构工程用材 Q1（45分）<span class="toggle">▼</span></h3>
+            <div class="sub-items">
+                <div class="sub-item" style="font-weight: bold;">
+                    <span style="width: 200px; display: inline-block;">二级指标</span>
+                    <span style="width: 150px; display: inline-block;">应用比例要求</span>
+                    <span style="width: 150px; display: inline-block;">绿材应用比例</span>
+                </div>
+                <div class="sub-item"><input type="checkbox" checked="true"><span style="width: 200px; display: inline-block;">预拌混凝土</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">预拌砂浆</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">砌体材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">石材</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">防水密封材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">保温隔热材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">混凝土构件</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">钢结构构件</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">木结构构件</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">轻钢龙骨</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">节能门窗</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">遮阳制品</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">建筑幕墙</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">墙板</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">其他类</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <p class="note-italic" >注：二级指标中选中项为本项目实际使用项目,包括绿色建材和非绿色建材。</p>
+            </div>
+        </div>
+
+        <div class="category" data-category="Q2">
+            <h3>装饰装修工程用材 Q2（35分）<span class="toggle">▼</span></h3>
+            <div class="sub-items">
+                <div class="sub-item" style="font-weight: bold;">
+                    <span style="width: 200px; display: inline-block;">二级指标</span>
+                    <span style="width: 150px; display: inline-block;">应用比例要求</span>
+                    <span style="width: 150px; display: inline-block;">绿材应用比例</span>
+                </div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">吊顶及配件</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">墙面涂料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">装配式集成墙面</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">壁纸（布）</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">建筑装饰板</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">装修用木制品</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">石膏装饰材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">抗菌净化材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">建筑陶瓷制品</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">地坪材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">卫生洁具</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">其他类</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <p class="note-italic" >注：二级指标中选中项为本项目实际使用项目,包括绿色建材和非绿色建材。</p>
+            </div>
+        </div>
+        <div class="category" data-category="Q3">
+            <h3>机电安装工程用材 Q3（15分）<span class="toggle">▼</span></h3>
+            <div class="sub-items">
+                <div class="sub-item" style="font-weight: bold;">
+                    <span style="width: 200px; display: inline-block;">二级指标</span>
+                    <span style="width: 150px; display: inline-block;">应用比例要求</span>
+                    <span style="width: 150px; display: inline-block;">绿材应用比例</span>
+                </div>
+                <div class="sub-item" ><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">管材管件</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">LED 照明产品</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">电线电缆</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox"> <span style="width: 200px; display: inline-block;">新风净化设备及其系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">采暖空调设备及其系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox"> <span style="width: 200px; display: inline-block;">热泵产品及其系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox"> <span style="width: 200px; display: inline-block;">辐射供暖供冷设备及其系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox"> <span style="width: 200px; display: inline-block;">一体化生活污水处理设备</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox"> <span style="width: 200px; display: inline-block;">太阳能光伏发电系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item" ><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">其他类</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <p class="note-italic" >注：二级指标中选中项为本项目实际使用项目,包括绿色建材和非绿色建材。</p>
+            </div>
+        </div>
+        <div class="category" data-category="Q4">
+            <h3>室外工程用材 Q4（5分）<span class="toggle">▼</span></h3>
+            <div class="sub-items">
+                <div class="sub-item" style="font-weight: bold;">
+                    <span style="width: 200px; display: inline-block;">二级指标</span>
+                    <span style="width: 150px; display: inline-block;">应用比例要求</span>
+                    <span style="width: 150px; display: inline-block;">绿材应用比例</span>
+                </div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">雨水收集回用系统</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">透水铺装材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">屋顶绿化材料</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox"> <span style="width: 200px; display: inline-block;">机械式停车设备</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <div class="sub-item"><input type="checkbox" checked="true"> <span style="width: 200px; display: inline-block;">其他类</span> <span style="width: 150px; display: inline-block;">≥80%</span> <input type="number" min="0" max="100" placeholder="实际比例">%</div>
+                <p class="note-italic" >注：二级指标中选中项为本项目实际使用项目,包括绿色建材和非绿色建材。</p>
+            </div>
+        </div>
+    </div>
+    <button onclick="calculate()" style="font-size: 18px; font-weight: 500;">立即计算</button>
+    <button onclick="exportWord()" style="font-size: 18px; font-weight: 500;">导出计算书</button>
+    <div id="result"></div>
+
+    <script>
+        // 折叠功能
+        document.querySelectorAll('.toggle, .category h3').forEach(toggle => {
+            toggle.style.cursor = 'pointer'; // 设置光标样式
+            toggle.addEventListener('click', () => {
+            const content = toggle.parentElement.querySelector('.sub-items');
+            if (content) {
+                content.style.display = content.style.display === 'none' ? 'block' : 'none';
+                const toggleIcon = toggle.parentElement.querySelector('.toggle');
+                if (toggleIcon) {
+                    toggleIcon.innerHTML = content.style.display === 'none' ? 
+  '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6 0L16 8L6 16V0Z"/></svg>' : 
+  '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6L16 6L8 16L0 6Z"/></svg>';
+                }
+            }
+            });
+        });
+
+        // 全局存储计算结果
+        const reportData = {
+        projectName: '',
+        buildingNo: '',
+        categories: {
+            Q1: { score: 0, label: '主体及围护结构工程用材', total: 45 },
+            Q2: { score: 0, label: '装饰装修工程用材', total: 35 },
+            Q3: { score: 0, label: '机电安装工程用材', total: 15 },
+            Q4: { score: 0, label: '室外工程用材', total: 5 }
+        },
+        totalScore: 0,
+        result: 0,
+        Original: ''
+    };
+        function calculate() {
+        try {
+            // 重置数据
+            reportData.projectName = document.getElementById('projectName').value;
+            reportData.buildingNo = document.getElementById('buildingNo').value;
+            Object.values(reportData.categories).forEach(cat => {
+                cat.score = 0;
+                cat.items = []; // 确保 items 数组被重置
+            });
+            reportData.totalScore = 0;
+            reportData.result = 0;
+            reportData.Original = '';
+
+            // 遍历每个分类区块
+            document.querySelectorAll('.category').forEach(categoryDiv => {
+                const categoryKey = categoryDiv.getAttribute('data-category');
+                const category = reportData.categories[categoryKey];
+
+                if (!category) {
+                    console.error(`未找到分类: ${categoryKey}`);
+                    return;
+                }
+                // 遍历子项，跳过第一项（标题行）
+                let checkedCount = 0;
+                let qualifiedCount = 0;
+                let isFirstItem = true;
+                categoryDiv.querySelectorAll('.sub-item').forEach(itemDiv => {
+                    // 跳过第一项（标题行）
+                    if (isFirstItem) {
+                        isFirstItem = false;
+                        return;
+                    }
+
+                    const checkbox = itemDiv.querySelector('input[type="checkbox"]');
+                    const input = itemDiv.querySelector('input[type="number"]');
+                    const actualValue = parseFloat(input.value) || 0;
+
+                    category.items.push({
+                        name: itemDiv.textContent.split('≥')[0].trim(),
+                        checked: checkbox.checked,
+                        actual: actualValue
+                    });
+
+                    if (checkbox.checked) {
+                        checkedCount++;
+                        if (actualValue >= 80) qualifiedCount++;
+                    }
+                });
+
+                // 计算分类得分（核心公式）
+                const categoryTotal = category.total;
+                const categoryScore = checkedCount > 0 
+                    ? (qualifiedCount / checkedCount) * categoryTotal
+                    : 0;
+                category.score = categoryScore;
+                reportData.totalScore += categoryScore; // 累加总得分
+            });
+
+            // 计算绿建得分
+            reportData.result = calculateGreenScore(reportData.totalScore);
+            //结论
+            if (reportData.totalScore > 10 && reportData.result == 0)
+            {
+              reportData.Original = "本项目绿色建材应用比例为" + reportData.totalScore.toFixed(1) + "%，满足《绿色建筑评价标准》GB/T 50378-2019（2024版）第3.2.8条要求。"
+            }
+            else if(reportData.result>0)
+            {
+              reportData.Original = "本项目绿色建材应用比例为" + reportData.totalScore.toFixed(1) + "%，满足《绿色建筑评价标准》GB/T 50378-2019（2024版）第3.2.8条要求，且满足第7.2.18条要求，可得" + reportData.result + "分。"
+            }
+            // 显示结果
+            showResult(reportData);
+        } catch (error) {
+            alert('计算错误：' + error.message);
+        }
+    }
+
+        function calculateGreenScore(total) {
+            if (total >= 70) return 12;
+            if (total >= 60) return 8;
+            if (total >= 40) return 4;
+            return 0;
+        }
+        function calculateGreenStar(total) {
+            if (total >= 30) return '满足三星级要求';
+            if (total >= 20) return '满足二星级要求';
+            if (total >= 10) return '满足一星级要求';
+            return '不满足星级要求';
+        }
+        // 更新后的结果显示函数
+        function showResult(data) {
+            const resultDiv = document.getElementById('result');
+            const GreenStar=calculateGreenStar(data.totalScore)
+            resultDiv.innerHTML = `
+                <h3 style="color: #4CAF50; font-size: 24px;">绿色建材得分统计</h3>
+                <p>项目名称：${data.projectName || '未填写'}</p>
+                <p>子项名称：${data.buildingNo || '未填写'}</p>
+                <hr>
+                 <div class="score-summary">
+                    ${Object.entries(data.categories).map(([key, category]) => `
+                        <div class="category-score">
+                            <strong>${category.label}</strong>：
+                            得分 ${category.score.toFixed(1)} / 总分 ${category.total}
+                            (达标率 ${(category.score / category.total * 100).toFixed(1)}%)
+                        </div>
+                    `).join('')}
+                </div>
+                <h4 style="color:#2196F3;margin-top:20px;">
+                    总得分：${data.totalScore.toFixed(1)} 分（满分100分）
+                </h4>
+                <hr>
+                <h3>
+                  绿色建材应用比例：${(data.totalScore / 100 * 100).toFixed(1)}%，${GreenStar}，绿建评分项可得分：${data.result}分
+                </h3>
+            `;
+        }
+
+    async function exportWord() {
+        const templatePath = 'static/绿色建材应用比例计算书.docx';  // 修改模板路径
+        const selectedValue = document.getElementById('standardSelection').value;
+        let standardtext ='';
+    switch(selectedValue) {
+        case 'national':
+            standardtext = `1、《绿色建筑评价标准》GB/T50378-2019（2024版）\n
+                            2、《绿色建筑评价技术细则》`;
+            break;
+            
+        case 'provincial':
+            standardtext = `1、《绿色建筑评价标准》GB/T50378-2019（2024版）\n
+                            2、四川省建筑工程绿色建材应用比例核算技术细则（试行）\n
+                            3、四川省民用绿色建筑设计施工图阶段审查技术要点（2024版）\n
+                            4、《绿色建筑评价技术细则》`;
+            break;
+            
+        case 'municipal':
+            standardtext = `1、《绿色建筑评价标准》GB/T50378-2019（2024版）\n
+                            2、四川省建筑工程绿色建材应用比例核算技术细则（试行）\n
+                            3、成都市绿色建筑施工图设计与审查技术要点（2024版）\n
+                            4、《绿色建筑评价技术细则》`;
+            break;
+        default:
+            console.warn("未选择有效的评价依据");
+            break;
+}
+        try {
+            // 数据校验
+            if (!reportData.totalScore) throw new Error('请先填写数据！');
+            // 加载模板
+            const response = await fetch(templatePath);
+            if (!response.ok) throw new Error('模板文件未找到');
+            // 处理文档
+            const zip = await JSZip.loadAsync(await response.arrayBuffer());
+            let xml = await zip.file('word/document.xml').async('text');
+            
+            // 动态替换（带默认值处理）
+            const replacements = {
+                '{{项目名称}}': reportData.projectName || '',
+                '{{子项名称}}': reportData.buildingNo || '',
+                '{{工程地点}}': reportData.buildingNo || '',
+                '{{设计编号}}': reportData.buildingNo || '',
+                '{{建设单位}}': reportData.buildingNo || '',
+                '{{设计单位}}': reportData.buildingNo || '',
+                '{{总得分}}': (reportData.totalScore ?? 0).toFixed(1),
+                '{{评价依据}}': standardtext,
+                '{{Q1_分值}}': (reportData.categories.Q1?.score ?? 0).toFixed(1),
+                '{{Q2_分值}}': (reportData.categories.Q2?.score ?? 0).toFixed(1),
+                '{{Q3_分值}}': (reportData.categories.Q3?.score ?? 0).toFixed(1),
+                '{{Q4_分值}}': (reportData.categories.Q4?.score ?? 0).toFixed(1),
+                '{{绿建评分}}': (reportData.result ?? 0).toString(),
+                '{{计算日期}}': new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+                '{{结论}}':reportData.Original|| ''
+            };
+            // 动态添加子项占位符
+            Object.keys(reportData.categories).forEach(categoryKey => {
+                const category = reportData.categories[categoryKey];
+                category.items.forEach((item, index) => {
+                    replacements[`{{${categoryKey}_item${index + 1}}}`] = item.actual.toFixed(1) + '%';
+                });
+            });
+            xml = xml 
+                .replace(/{{(.*?)}}/g, (match, p1) => replacements[match] || '')  // 先替换占位符
+            // 生成并下载
+            zip.file('word/document.xml', xml);
+            const blob = await zip.generateAsync({ type: 'blob' });
+            saveAs(blob, `绿色建材应用比例计算书.docx`);
+        } catch (error) {
+            alert(`导出失败: ${error.message}\n错误代码：WORD_${error.name}`);
+        }
+    }
+</script>
+</body>
+</html>

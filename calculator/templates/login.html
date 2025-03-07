@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+.checkbox-wrapper input[type="checkbox"] {
+opacity: 0;
+position: absolute;
+}
+.checkbox-wrapper .custom-checkbox {
+width: 18px;
+height: 18px;
+border: 2px solid #e5e7eb;
+border-radius: 4px;
+display: inline-block;
+position: relative;
+cursor: pointer;
+transition: all 0.2s;
+}
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox {
+background-color: rgb(87, 181, 231);
+border-color: rgb(87, 181, 231);
+}
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox::after {
+content: '';
+position: absolute;
+left: 5px;
+top: 2px;
+width: 5px;
+height: 9px;
+border: solid white;
+border-width: 0 2px 2px 0;
+transform: rotate(45deg);
+}
+</style>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#3176FF',secondary:'#6B7280'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+<div class="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+<div class="text-center mb-8">
+<h1 class="font-['Pacifico'] text-4xl text-primary mb-2">logo</h1>
+<h2 class="text-2xl font-semibold text-gray-900">欢迎回来</h2>
+<p class="mt-2 text-sm text-gray-600">请输入您的账号和密码进行登录</p>
+</div>
+<form id="loginForm" class="space-y-6">
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<i class="ri-user-line text-gray-400"></i>
+</div>
+<input type="text" id="username" required class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-button text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入用户名/邮箱">
+</div>
+<p class="error-message mt-1 text-sm text-red-600 hidden"></p>
+</div>
+<div>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<i class="ri-lock-line text-gray-400"></i>
+</div>
+<input type="password" id="password" required class="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-button text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入密码">
+<button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+<i class="ri-eye-off-line text-gray-400"></i>
+</button>
+</div>
+<p class="error-message mt-1 text-sm text-red-600 hidden"></p>
+</div>
+<div class="flex items-center justify-between">
+<label class="checkbox-wrapper flex items-center">
+<input type="checkbox" id="remember">
+<span class="custom-checkbox mr-2"></span>
+<span class="text-sm text-gray-600">记住我</span>
+</label>
+<a href="/reset_password" class="text-sm text-primary hover:text-primary/80">忘记密码？</a>
+</div>
+<button type="submit" id="loginBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-button text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary !rounded-button">
+<span id="btnText">登录</span>
+<svg id="loadingIcon" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+</svg>
+</button>
+</form>
+<div class="mt-6">
+<div class="relative">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-gray-300"></div>
+</div>
+<div class="relative flex justify-center text-sm">
+<span class="px-2 bg-white text-gray-500">其他登录方式</span>
+</div>
+</div>
+<div class="mt-6 grid grid-cols-3 gap-3">
+<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+<i class="ri-wechat-fill text-[#07C160] text-xl"></i>
+</button>
+<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+<i class="ri-alipay-fill text-[#1677FF] text-xl"></i>
+</button>
+<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+<i class="ri-apple-fill text-black text-xl"></i>
+</button>
+</div>
+</div>
+<p class="mt-8 text-center text-sm text-gray-600">
+还没有账号？
+<a href="/register" class="font-medium text-primary hover:text-primary/80">立即注册</a>
+</p>
+</div>
+<div id="toast" class="fixed top-4 right-4 flex items-center p-4 mb-4 text-gray-500 bg-white rounded-lg shadow hidden" role="alert">
+<div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg">
+<i class="ri-error-warning-line"></i>
+</div>
+<div id="toastMessage" class="ml-3 text-sm font-normal"></div>
+</div>
+<script>
+document.getElementById('togglePassword').addEventListener('click', function() {
+const passwordInput = document.getElementById('password');
+const icon = this.querySelector('i');
+if (passwordInput.type === 'password') {
+passwordInput.type = 'text';
+icon.className = 'ri-eye-line text-gray-400';
+} else {
+passwordInput.type = 'password';
+icon.className = 'ri-eye-off-line text-gray-400';
+}
+});
+function showToast(message) {
+const toast = document.getElementById('toast');
+const toastMessage = document.getElementById('toastMessage');
+toastMessage.textContent = message;
+toast.classList.remove('hidden');
+setTimeout(() => {
+toast.classList.add('hidden');
+}, 3000);
+}
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+e.preventDefault();
+const username = document.getElementById('username').value;
+const password = document.getElementById('password').value;
+const loginBtn = document.getElementById('loginBtn');
+const btnText = document.getElementById('btnText');
+const loadingIcon = document.getElementById('loadingIcon');
+
+btnText.classList.add('hidden');
+loadingIcon.classList.remove('hidden');
+loginBtn.disabled = true;
+
+try {
+    const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: username,  // 确保发送的字段名是 email
+            password: password
+        })
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+        showToast('登录成功！');
+        setTimeout(() => {
+            window.location.href = '/calculator';  // 修改为跳转到calculator页面
+        }, 1000);
+    } else {
+        showToast(data.error || '登录失败，请检查用户名和密码');
+    }
+} catch (error) {
+    showToast('登录失败，请稍后重试');
+} finally {
+    btnText.classList.remove('hidden');
+    loadingIcon.classList.add('hidden');
+    loginBtn.disabled = false;
+}
+});
+</script>
+</body>
+</html>
