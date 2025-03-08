@@ -24,8 +24,8 @@ cursor: pointer;
 transition: all 0.2s;
 }
 .checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox {
-background-color: rgb(87, 181, 231);
-border-color: rgb(87, 181, 231);
+background-color: #3176FF;
+border-color: #3176FF;
 }
 .checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox::after {
 content: '';
@@ -89,10 +89,41 @@ tailwind.config={theme:{extend:{colors:{primary:'#3176FF',secondary:'#6B7280'},b
 </div>
 <div class="flex items-center justify-between">
 <label class="checkbox-wrapper flex items-center">
-<input type="checkbox" id="remember">
+<input type="checkbox" id="remember" onchange="handleRememberMe(this.checked)">
 <span class="custom-checkbox mr-2"></span>
 <span class="text-sm text-gray-600">记住我</span>
 </label>
+<script>
+// 检查是否有保存的登录信息
+window.addEventListener('DOMContentLoaded', () => {
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    const rememberMe = localStorage.getItem('rememberMe');
+    
+    if (rememberMe === 'true' && savedUsername) {
+        document.getElementById('username').value = savedUsername;
+        document.getElementById('remember').checked = true;
+    }
+});
+
+// 处理记住我选项变化
+function handleRememberMe(checked) {
+    if (!checked) {
+        localStorage.removeItem('rememberedUsername');
+        localStorage.removeItem('rememberMe');
+    }
+}
+
+// 在登录成功时保存用户信息
+document.getElementById('loginForm').addEventListener('submit', (e) => {
+    const rememberMe = document.getElementById('remember').checked;
+    const username = document.getElementById('username').value;
+    
+    if (rememberMe) {
+        localStorage.setItem('rememberedUsername', username);
+        localStorage.setItem('rememberMe', 'true');
+    }
+});
+</script>
 <a href="/reset_password" class="text-sm text-primary hover:text-primary/80">忘记密码？</a>
 </div>
 <button type="submit" id="loginBtn" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-button text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary !rounded-button">
@@ -109,19 +140,7 @@ tailwind.config={theme:{extend:{colors:{primary:'#3176FF',secondary:'#6B7280'},b
 <div class="w-full border-t border-gray-300"></div>
 </div>
 <div class="relative flex justify-center text-sm">
-<span class="px-2 bg-white text-gray-500">其他登录方式</span>
-</div>
-</div>
-<div class="mt-6 grid grid-cols-3 gap-3">
-<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
-<i class="ri-wechat-fill text-[#07C160] text-xl"></i>
-</button>
-<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
-<i class="ri-alipay-fill text-[#1677FF] text-xl"></i>
-</button>
-<button type="button" class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-button shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
-<i class="ri-apple-fill text-black text-xl"></i>
-</button>
+</script>
 </div>
 </div>
 <p class="mt-8 text-center text-sm text-gray-600">
