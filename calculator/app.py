@@ -116,7 +116,7 @@ def register():
     if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', data['email']):
         return jsonify({'error': '邮箱格式不正确'}), 400
     
-    # 检查邮箱是否已存在（修复语法错误）
+    # 检查邮箱是否已存在
     existing_user = User.query.filter_by(email=data['email']).first()
     if existing_user:
         return jsonify({'error': '该邮箱已被注册'}), 400
@@ -127,10 +127,11 @@ def register():
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': '注册成功'}), 201
+        return jsonify({'success': True, 'message': '注册成功'}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'注册失败：{str(e)}'}), 500
+        app.logger.error(f"注册错误: {str(e)}")
+        return jsonify({'error': '注册失败，请稍后重试'}), 500
 
 # 修改登录验证装饰器
 def login_required(f):
