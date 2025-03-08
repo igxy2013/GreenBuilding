@@ -80,6 +80,11 @@
             background-color: #3176FF;
             border-color: #3176FF;
         }
+        .note-italic {
+            font-style: italic;
+            font-size: 14px;
+            color: #6B7280;
+        }
         .checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox::after {
             content: '';
             position: absolute;
@@ -112,6 +117,17 @@
 
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+    <!-- 添加用户信息区域 -->
+    <div class="fixed top-4 right-4 flex items-center space-x-4">
+        <div class="text-right">
+            <p class="text-sm font-medium text-gray-900" id="userName">加载中...</p>
+            <p class="text-xs text-gray-500" id="userRole">普通用户</p>
+        </div>
+        <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-lg font-semibold" id="userAvatar">
+            U
+        </div>
+    </div>
+    
     <div class="max-w-5xl mx-auto">
         <h2 class="text-4xl font-semibold text-primary text-center mb-12">绿色建材应用比例计算</h2>
         
@@ -265,6 +281,9 @@
             <button onclick="exportWord()" class="px-6 py-3 bg-primary text-white rounded-button hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
                 导出计算书
             </button>
+            <button onclick="saveForm()" class="px-6 py-3 bg-white text-primary border border-primary rounded-button hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                保存数据
+            </button>
         </div>
 
         <div id="result" class="mt-8 bg-white rounded-lg shadow-xl p-8 hidden">
@@ -375,6 +394,10 @@
             }
             // 显示结果
             showResult(reportData);
+            // 添加200ms延时，确保滚动到底部
+            setTimeout(() => {
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 200);
         } catch (error) {
             alert('计算错误：' + error.message);
         }
@@ -455,6 +478,141 @@
                 });
             });
         });
+
+        // 获取用户信息
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch('/api/user/info', {
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // 更新用户信息显示
+                    document.getElementById('userName').textContent = data.name || data.email;
+                    document.getElementById('userRole').textContent = data.role;
+                    // 设置头像显示
+                    const avatarText = (data.name || data.email).charAt(0).toUpperCase();
+                    document.getElementById('userAvatar').textContent = avatarText;
+                    
+                    // 添加登出按钮
+                    const userInfo = document.querySelector('.fixed.top-4.right-4');
+                    const logoutBtn = document.createElement('button');
+                    logoutBtn.className = 'ml-2 text-sm text-gray-600 hover:text-primary';
+                    logoutBtn.textContent = '退出';
+                    logoutBtn.onclick = () => window.location.href = '/logout';
+                    userInfo.appendChild(logoutBtn);
+                }
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+                // 显示错误信息
+                document.getElementById('userName').textContent = '加载失败';
+                document.getElementById('userRole').textContent = '未知';
+            }
+        });
+
+        // 添加保存表单数据的函数
+        async function saveForm() {
+            try {
+                // 收集所有表单数据
+                const formData = {
+                    projectName: document.getElementById('projectName').value,
+                    buildingNo: document.getElementById('buildingNo').value,
+                    projectLocation: document.getElementById('projectLocation').value,
+                    designNo: document.getElementById('designNo').value,
+                    constructionUnit: document.getElementById('constructionUnit').value,
+                    designUnit: document.getElementById('designUnit').value,
+                    standardSelection: document.getElementById('standardSelection').value,
+                    formData: {}
+                };
+
+                // 收集所有分类的数据
+                document.querySelectorAll('.category').forEach(category => {
+                    const categoryKey = category.getAttribute('data-category');
+                    formData.formData[categoryKey] = [];
+                    
+                    category.querySelectorAll('.sub-item').forEach((item, index) => {
+                        if (index === 0) return; // 跳过标题行
+                        
+                        const checkbox = item.querySelector('input[type="checkbox"]');
+                        const input = item.querySelector('input[type="number"]');
+                        
+                        if (checkbox && input) {
+                            formData.formData[categoryKey].push({
+                                checked: checkbox.checked,
+                                value: input.value
+                            });
+                        }
+                    });
+                });
+
+                const response = await fetch('/api/save_form', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert('数据保存成功！');
+                } else {
+                    throw new Error('保存失败');
+                }
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                alert('保存失败，请稍后重试');
+            }
+        }
+
+        // 添加加载表单数据的函数
+        async function loadForm() {
+            try {
+                const response = await fetch('/api/load_form');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // 填充基本信息
+                    document.getElementById('projectName').value = data.projectName || '';
+                    document.getElementById('buildingNo').value = data.buildingNo || '';
+                    document.getElementById('projectLocation').value = data.projectLocation || '';
+                    document.getElementById('designNo').value = data.designNo || '';
+                    document.getElementById('constructionUnit').value = data.constructionUnit || '';
+                    document.getElementById('designUnit').value = data.designUnit || '';
+                    document.getElementById('standardSelection').value = data.standardSelection || 'municipal';
+                    
+                    // 填充表单数据
+                    if (data.formData) {
+                        Object.entries(data.formData).forEach(([categoryKey, items]) => {
+                            const category = document.querySelector(`.category[data-category="${categoryKey}"]`);
+                            if (!category) return;
+                            
+                            const subItems = category.querySelectorAll('.sub-item');
+                            items.forEach((item, index) => {
+                                const subItem = subItems[index + 1]; // +1 跳过标题行
+                                if (!subItem) return;
+                                
+                                const checkbox = subItem.querySelector('input[type="checkbox"]');
+                                const input = subItem.querySelector('input[type="number"]');
+                                
+                                if (checkbox && input) {
+                                    checkbox.checked = item.checked;
+                                    input.value = item.value;
+                                    // 触发checkbox的change事件以更新样式
+                                    const event = new Event('change');
+                                    checkbox.dispatchEvent(event);
+                                }
+                            });
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+
+        // 在页面加载时加载表单数据
+        document.addEventListener('DOMContentLoaded', loadForm);
     </script>
 </body>
 </html>

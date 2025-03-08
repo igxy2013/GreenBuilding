@@ -28,6 +28,21 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
+# 添加表单数据模型
+class FormData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    project_name = db.Column(db.String(200))
+    building_no = db.Column(db.String(100))
+    project_location = db.Column(db.String(200))
+    design_no = db.Column(db.String(100))
+    construction_unit = db.Column(db.String(200))
+    design_unit = db.Column(db.String(200))
+    standard_selection = db.Column(db.String(50))
+    form_data = db.Column(db.JSON)  # 存储所有复选框和输入值
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 def init_db():
     """初始化数据库并添加测试数据"""
     with app.app_context():
@@ -222,6 +237,81 @@ def check_auth():
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
     return jsonify({'status': 'authenticated'}), 200
+
+# 添加获取用户信息的API端点
+@app.route('/api/user/info')
+def get_user_info():
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+        
+    try:
+        user = User.query.get(session['user_id'])
+        if user:
+            return jsonify({
+                'id': user.id,
+                'email': user.email,
+                'name': user.email.split('@')[0],  # 使用邮箱前缀作为显示名称
+                'role': '普通用户',  # 可以根据实际需求设置不同的角色
+                'created_at': user.created_at.isoformat()
+            })
+        return jsonify({'error': 'User not found'}), 404
+    except Exception as e:
+        app.logger.error(f"获取用户信息错误: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# 添加保存表单数据的API
+@app.route('/api/save_form', methods=['POST'])
+@login_required
+def save_form():
+    try:
+        data = request.get_json()
+        
+        # 查找是否存在之前的保存
+        form_data = FormData.query.filter_by(user_id=session['user_id']).first()
+        
+        if not form_data:
+            form_data = FormData(user_id=session['user_id'])
+            
+        # 更新数据
+        form_data.project_name = data.get('projectName')
+        form_data.building_no = data.get('buildingNo')
+        form_data.project_location = data.get('projectLocation')
+        form_data.design_no = data.get('designNo')
+        form_data.construction_unit = data.get('constructionUnit')
+        form_data.design_unit = data.get('designUnit')
+        form_data.standard_selection = data.get('standardSelection')
+        form_data.form_data = data.get('formData')  # 存储所有复选框和输入值
+        
+        db.session.add(form_data)
+        db.session.commit()
+        
+        return jsonify({'message': '保存成功'}), 200
+    except Exception as e:
+        app.logger.error(f"保存表单数据错误: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# 添加获取表单数据的API
+@app.route('/api/load_form')
+@login_required
+def load_form():
+    try:
+        form_data = FormData.query.filter_by(user_id=session['user_id']).first()
+        
+        if form_data:
+            return jsonify({
+                'projectName': form_data.project_name,
+                'buildingNo': form_data.building_no,
+                'projectLocation': form_data.project_location,
+                'designNo': form_data.design_no,
+                'constructionUnit': form_data.construction_unit,
+                'designUnit': form_data.design_unit,
+                'standardSelection': form_data.standard_selection,
+                'formData': form_data.form_data
+            }), 200
+        return jsonify({'message': 'No data found'}), 404
+    except Exception as e:
+        app.logger.error(f"加载表单数据错误: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # 确保使用正确的路径分隔符
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
