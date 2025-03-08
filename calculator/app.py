@@ -314,6 +314,63 @@ def load_form():
         app.logger.error(f"加载表单数据错误: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+# 添加验证用户名/邮箱是否存在的API
+@app.route('/api/check_user', methods=['POST'])
+def check_user():
+    """验证用户名/邮箱是否存在"""
+    try:
+        data = request.get_json()
+        if not data or not data.get('username'):
+            return jsonify({'error': '请提供用户名或邮箱'}), 400
+            
+        username = data.get('username')
+        # 检查是否为邮箱格式
+        if re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', username):
+            user = User.query.filter_by(email=username).first()
+        else:
+            # 如果不是邮箱格式，假设是用户名（邮箱前缀）
+            user = User.query.filter(User.email.startswith(f"{username}@")).first()
+        
+        if user:
+            return jsonify({'exists': True}), 200
+        else:
+            return jsonify({'exists': False}), 200
+    except Exception as e:
+        app.logger.error(f"验证用户错误: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# 添加重置密码的API
+@app.route('/api/reset_password', methods=['POST'])
+def reset_password():
+    """重置用户密码"""
+    try:
+        data = request.get_json()
+        if not data or not data.get('username') or not data.get('password'):
+            return jsonify({'error': '请提供用户名/邮箱和新密码'}), 400
+            
+        username = data.get('username')
+        new_password = data.get('password')
+        
+        # 检查是否为邮箱格式
+        if re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', username):
+            user = User.query.filter_by(email=username).first()
+        else:
+            # 如果不是邮箱格式，假设是用户名（邮箱前缀）
+            user = User.query.filter(User.email.startswith(f"{username}@")).first()
+        
+        if not user:
+            return jsonify({'error': '用户不存在'}), 404
+            
+        # 更新密码
+        user.set_password(new_password)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': '密码重置成功'}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"重置密码错误: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # 确保使用正确的路径分隔符
 static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
