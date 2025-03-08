@@ -44,7 +44,7 @@ async function exportWord() {
             '{{Q3_分值}}': (reportData.categories.Q3?.score ?? 0).toFixed(1),
             '{{Q4_分值}}': (reportData.categories.Q4?.score ?? 0).toFixed(1),
             '{{绿建评分}}': (reportData.result ?? 0).toString(),
-            '{{计算日期}}': new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+            '{{计算日期}}': new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }),
             '{{结论}}': reportData.Original || ''
         };
 
