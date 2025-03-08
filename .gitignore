@@ -1,3 +1,4 @@
+calculator\users.db
 calculator/venv/Lib/site-packages/gunicorn/workers/__pycache__/__init__.cpython-310.pyc
 calculator/venv/Lib/site-packages/gunicorn/workers/__pycache__/base_async.cpython-310.pyc
 calculator/venv/Lib/site-packages/gunicorn/workers/__pycache__/base.cpython-310.pyc
